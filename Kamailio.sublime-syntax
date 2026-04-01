@@ -1,0 +1,290 @@
+%YAML 1.2
+---
+# Kamailio SIP Server Configuration Syntax
+# Ported from miconda/vscode-kamailio-syntax (MIT License)
+# https://github.com/miconda/vscode-kamailio-syntax
+
+name: Kamailio
+file_extensions:
+  - cfg
+  - inc
+first_line_match: '\b(KAMAILIO|kamailio|SER|ser|SIP-ROUTER|sip-router|OPENSER|openser)\b'
+scope: source.kamailio
+version: 2
+
+# ---------------------------------------------------------------------------
+# Variables – reusable fragments
+# ---------------------------------------------------------------------------
+variables:
+  preproc_start: '(\#[!]|[!]{2})'
+  id: '[a-zA-Z0-9_]+'
+
+# ---------------------------------------------------------------------------
+# Prototype: comments appear in every context
+# ---------------------------------------------------------------------------
+contexts:
+  prototype:
+    - include: comments
+
+  # -------------------------------------------------------------------------
+  # Main context
+  # -------------------------------------------------------------------------
+  main:
+    - include: preprocessor
+    - include: routing-blocks
+    - include: module-commands
+    - include: keywords
+    - include: controls
+    - include: conditionals
+    - include: strings
+    - include: numbers
+    - include: variables
+    - include: core-variables
+    - include: protocol-constants
+    - include: boolean-values
+    - include: sip-keywords
+    - include: operators
+    - include: punctuation
+
+  # -------------------------------------------------------------------------
+  # Comments
+  # -------------------------------------------------------------------------
+  comments:
+    # Empty comment line: bare # at end of line
+    - match: '^\s*\#$'
+      scope: comment.line.number-sign.kamailio
+    # Line comment #  (not #! which is a preprocessor directive)
+    - match: '#(?!!)'
+      push: line-comment-hash
+    # Line comment //
+    - match: '//'
+      push: line-comment-slash
+    # Block comment /* ... */
+    - match: '/\*'
+      push: block-comment
+
+  line-comment-hash:
+    - meta_scope: comment.line.number-sign.kamailio
+    - meta_include_prototype: false
+    - match: $\n?
+      pop: true
+
+  line-comment-slash:
+    - meta_scope: comment.line.double-slash.kamailio
+    - meta_include_prototype: false
+    - match: $\n?
+      pop: true
+
+  block-comment:
+    - meta_scope: comment.block.kamailio
+    - meta_include_prototype: false
+    - match: '\*/'
+      pop: true
+
+  # -------------------------------------------------------------------------
+  # Preprocessor directives
+  # -------------------------------------------------------------------------
+  preprocessor:
+    # #!KAMAILIO / !!ALL etc.
+    - match: '{{preproc_start}}(KAMAILIO|kamailio|SER|ser|SIP-ROUTER|sip-router|ALL|all)\b'
+      scope: support.class.kamailio
+
+    # Directives with an identifier argument: #!define FOO, #!ifdef BAR …
+    - match: '{{preproc_start}}(define|ifdef|ifndef|ifexp|trydefine|trydef|redefine|redef|defenv|defenvs|trydefenv|trydefenvs|defexp|defexps)\s*(\w*)\b'
+      captures:
+        2: storage.type.primitive.kamailio
+        3: constant.other.kamailio
+
+    # Directives without an identifier argument: #!else, #!endif, #!subst …
+    - match: '{{preproc_start}}(else|endif|subst|substdef|substdefs)\b'
+      scope: storage.type.primitive.kamailio
+
+    # include / import (preprocessor form: #!include_file or !!include_file)
+    - match: '{{preproc_start}}(include_file|import_file)\b'
+      scope: storage.type.primitive.kamailio
+
+    # include / import (plain keyword form)
+    - match: '\b(include_file|import_file)\b'
+      scope: storage.type.primitive.kamailio
+
+  # -------------------------------------------------------------------------
+  # Routing blocks
+  # -------------------------------------------------------------------------
+  routing-blocks:
+    # Unnamed main blocks: request_route, reply_route, onsend_route
+    - match: '\b(request_route|reply_route|onsend_route)\b'
+      scope: support.function.kamailio
+
+    # Named blocks with square-bracket label: route[name], branch_route[name] …
+    - match: '\b(route|branch_route|failure_route|onreply_route|event_route)\s*(\[)([^\]]+)(\])'
+      captures:
+        1: entity.name.class.kamailio
+        2: punctuation.section.brackets.begin.kamailio
+        3: constant.other.kamailio
+        4: punctuation.section.brackets.end.kamailio
+
+    # Executing a route block: route(name)
+    - match: '\b(route)\s*(\()([^)]+)(\))'
+      captures:
+        1: entity.name.function.kamailio
+        2: punctuation.section.parens.begin.kamailio
+        3: constant.other.kamailio
+        4: punctuation.section.parens.end.kamailio
+
+  # -------------------------------------------------------------------------
+  # Module-level keywords
+  # -------------------------------------------------------------------------
+  module-commands:
+    - match: '\b(loadmodule|loadmodulex|modparam|modparamx|loadpath|mpath|cfgengine)\b'
+      scope: keyword.source.kamailio
+
+  # -------------------------------------------------------------------------
+  # General keywords / controls / conditionals
+  # -------------------------------------------------------------------------
+  keywords:
+    - match: '\b(desc|advertise|name)\b'
+      scope: keyword.control.kamailio
+
+  controls:
+    - match: '\b(return|exit|drop)\b'
+      scope: entity.name.function.kamailio
+
+  conditionals:
+    - match: '\b(if|else|while|switch|case|break|default)\b'
+      scope: keyword.control.conditional.kamailio
+
+  # -------------------------------------------------------------------------
+  # Strings – double and single quoted
+  # -------------------------------------------------------------------------
+  strings:
+    - match: '"'
+      push: string-double-quoted
+    - match: "'"
+      push: string-single-quoted
+
+  string-double-quoted:
+    - meta_scope: string.quoted.double.kamailio
+    - meta_include_prototype: false
+    - match: '\\.'
+      scope: constant.character.escape.kamailio
+    - include: sip-keywords
+    - match: '"'
+      pop: true
+
+  string-single-quoted:
+    - meta_scope: string.quoted.single.kamailio
+    - meta_include_prototype: false
+    - match: '\\.'
+      scope: constant.character.escape.kamailio
+    - include: sip-keywords
+    - match: "'"
+      pop: true
+
+  # -------------------------------------------------------------------------
+  # SIP methods and headers
+  # -------------------------------------------------------------------------
+  sip-keywords:
+    - match: '\b(INVITE|ACK|BYE|CANCEL|PRACK|UPDATE|REGISTER|MESSAGE|INFO|OPTIONS|SUBSCRIBE|NOTIFY|PUBLISH|REFER|KDMQ|GET|POST|PUT|DELETE)\b'
+      scope: constant.language.kamailio
+    - match: '\b(SIP|From|To|Call-ID|CSeq|Route|Record-Route|Authorization|Proxy-Authorization|Contact|Expires|Content-Type|Content-Length|Via|User-Agent|P-Asserted-Identity)\b'
+      scope: constant.language.kamailio
+
+  # -------------------------------------------------------------------------
+  # Numeric literals: hex, decimal, float, scientific
+  # -------------------------------------------------------------------------
+  numbers:
+    - match: '\b((0[xX][0-9a-fA-F]*)|(([0-9]+\.?[0-9]*)|(\.[0-9]+))((e|E)(\+|-)?[0-9]+)?)\b'
+      scope: constant.numeric.kamailio
+
+  # -------------------------------------------------------------------------
+  # Variables: $name, $(name), $name(inner), $(name(inner))
+  # -------------------------------------------------------------------------
+  variables:
+    # $null
+    - match: '(\$)null\b'
+      scope: constant.language.null.kamailio
+
+    # $(name(inner)…) – outer parens, inner name with parens
+    - match: '(\$)\({{id}}\({{id}}\)'
+      push: variable-outer-parens
+
+    # $(name…) – outer parens, simple name
+    - match: '(\$)\({{id}}'
+      push: variable-outer-parens
+
+    # $name(inner) – no outer parens, but inner name with parens
+    - match: '(\$){{id}}\({{id}}\)'
+      scope: support.variable.kamailio
+
+    # $name – simple variable
+    - match: '(\$){{id}}\b'
+      scope: support.variable.kamailio
+
+  variable-outer-parens:
+    - meta_scope: support.variable.kamailio
+    - meta_include_prototype: false
+    - include: index
+    - include: transformation
+    - match: '\)'
+      pop: true
+
+  # Transformation: {s.…}, {uri.…}, {json.…} etc.
+  transformation:
+    - match: '\{(s|uri|param|nameaddr|tobody|re|line|sql|msrpuri|json|url|sock|urialias|val)\.'
+      push: transformation-body
+
+  transformation-body:
+    - meta_scope: entity.name.function.kamailio
+    - meta_include_prototype: false
+    - match: '\}'
+      pop: true
+
+  # Array index: [expr]
+  index:
+    - match: '\[.+?\]'
+      scope: variable.parameter.kamailio
+
+  # -------------------------------------------------------------------------
+  # Core (pseudo) variables – bare names without $
+  # -------------------------------------------------------------------------
+  core-variables:
+    - match: '\b(af|dst_ip|dst_port|from_uri|method|msg:len|proto|status|snd_af|snd_ip|snd_port|snd_proto|src_ip|src_port|to_af|to_ip|to_port|to_proto|to_uri|uri|uri:host|uri:port)\b'
+      scope: support.variable.kamailio
+
+  # -------------------------------------------------------------------------
+  # Protocol / transport / SSL constants
+  # -------------------------------------------------------------------------
+  protocol-constants:
+    - match: '\b(max_len|myself|udp|UDP|tcp|TCP|tls|TLS|sctp|SCTP|ws|WS|wss|WSS|inet|INET|inet6|INET6|sslv23|SSLv23|SSLV23|sslv2|SSLv2|SSLV2|sslv3|SSLv3|SSLV3|tlsv1|TLSv1|TLSV1)\b'
+      scope: constant.language.kamailio
+    - match: '\b(LOG_LOCAL[0-9]+)\b'
+      scope: constant.language.kamailio
+
+  # -------------------------------------------------------------------------
+  # Boolean literals
+  # -------------------------------------------------------------------------
+  boolean-values:
+    - match: '\b(true|yes|on|enabled)\b'
+      scope: constant.language.boolean.true.kamailio
+    - match: '\b(false|no|off|disabled)\b'
+      scope: constant.language.boolean.false.kamailio
+
+  # -------------------------------------------------------------------------
+  # Operators
+  # -------------------------------------------------------------------------
+  operators:
+    - match: '=~|!=|==|<=|>=|<|>|\+|-|\*|\^|&|/|\||!|='
+      scope: keyword.operator.kamailio
+    - match: '\b(?i:mod|and|not|or|xor|defined|eq|ieq|ne|ine)\b'
+      scope: keyword.operator.word.kamailio
+
+  # -------------------------------------------------------------------------
+  # Punctuation
+  # -------------------------------------------------------------------------
+  punctuation:
+    - match: ','
+      scope: punctuation.comma.kamailio
+    - match: ';'
+      scope: punctuation.terminator.kamailio
+    - match: '\.'
+      scope: punctuation.dot.kamailio

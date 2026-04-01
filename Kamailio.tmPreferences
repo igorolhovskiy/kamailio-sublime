@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<!--
+  Kamailio – editor preferences (comment toggles, folding, bracket matching)
+  Ported from miconda/vscode-kamailio-syntax (MIT License)
+-->
+<dict>
+    <key>name</key>
+    <string>Kamailio Preferences</string>
+    <key>scope</key>
+    <string>source.kamailio</string>
+    <key>settings</key>
+    <dict>
+
+        <!-- Comment markers used by Edit > Toggle Comment -->
+        <key>shellVariables</key>
+        <array>
+            <dict>
+                <key>name</key>
+                <string>TM_COMMENT_START</string>
+                <key>value</key>
+                <string># </string>
+            </dict>
+            <dict>
+                <key>name</key>
+                <string>TM_COMMENT_START_2</string>
+                <key>value</key>
+                <string>/* </string>
+            </dict>
+            <dict>
+                <key>name</key>
+                <string>TM_COMMENT_END_2</string>
+                <key>value</key>
+                <string> */</string>
+            </dict>
+        </array>
+
+        <!-- Code folding: fold on opening braces and /* block comments -->
+        <key>foldingStartMarker</key>
+        <string>(?x)/\*\*(?!\*)|^(?![^{]*?//|[^{]*?/\*(?!.*?\*/.*?\{)).*?\{\s*($|//|/\*(?!.*?\*/.*\S))</string>
+
+        <key>foldingStopMarker</key>
+        <string>(?&lt;!\*)\*\*/|^\s*\}</string>
+
+        <!-- Bracket matching pairs -->
+        <key>matchedStringAttributes</key>
+        <dict>
+            <key>bracketContentsScope</key>
+            <string>meta.block.kamailio</string>
+        </dict>
+
+    </dict>
+</dict>
+</plist>
