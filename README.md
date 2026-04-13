@@ -1,6 +1,6 @@
 # Kamailio Sublime Text Syntax
 
-Syntax highlighting for [Kamailio](https://www.kamailio.org/) SIP server configuration files (`.cfg`, `.inc`).
+Syntax highlighting for [Kamailio](https://www.kamailio.org/) SIP server configuration files (`.cfg`).
 Ported from [miconda/vscode-kamailio-syntax](https://github.com/miconda/vscode-kamailio-syntax) (MIT).
 
 ## Installation
